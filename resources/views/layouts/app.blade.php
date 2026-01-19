@@ -41,10 +41,19 @@ scratch. This page gets rid of all links and provides the needed markup only.
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
-      <form action="{{ route('logout') }}" method="post">
-        @csrf
-        <button type="submit" class="btn text-danger">Logout</button>
-      </form>
+        <div class="dropdown">
+  <button class="btn  dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+    {{ ucwords(auth()->user()->name) }}
+  </button>
+  <div class="dropdown-menu">
+    <a class="dropdown-item" href="#">Ganti Password</a>
+    <form action="{{ route('logout') }}" method="post">
+      @csrf
+      <button type="submit" class="btn text-danger">Logout</button>
+    </form>
+
+  </div>
+</div>
     </ul>
   </nav>
   <!-- /.navbar -->
