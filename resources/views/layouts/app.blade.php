@@ -46,7 +46,10 @@ scratch. This page gets rid of all links and provides the needed markup only.
     {{ ucwords(auth()->user()->name) }}
   </button>
   <div class="dropdown-menu">
-    <a class="dropdown-item" href="#">Ganti Password</a>
+    <button type="button" class="btn " data-toggle="modal" data-target="#FormGantiPassword">
+  Ganti Password
+</button>
+
     <form action="{{ route('logout') }}" method="post">
       @csrf
       <button type="submit" class="btn text-danger">Logout</button>
@@ -57,7 +60,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
     </ul>
   </nav>
   <!-- /.navbar -->
-
+   <x-user.form-ganti-password />
   <!-- Main Sidebar Container -->
   <x-admin.aside/>
 
@@ -107,6 +110,9 @@ scratch. This page gets rid of all links and provides the needed markup only.
 
 <!-- jQuery -->
 <script src="{{ asset('adminlte') }}/plugins/jquery/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css" integrity="sha512-kq3FES+RuuGoBW3a9R2ELYKRywUEQv0wvPTItv3DSGqjpbNtGWVdvT8qwdKkqvPzT93jp8tSF4+oN4IeTEIlQA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <!-- Bootstrap 4 -->
 <script src="{{ asset('adminlte') }}/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <!-- AdminLTE App -->
@@ -142,5 +148,6 @@ scratch. This page gets rid of all links and provides the needed markup only.
     });
   });
 </script>
+@stack('script')
 </body>
 </html>

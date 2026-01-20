@@ -29,8 +29,20 @@
                     <td>{{ $user->email }}</td>
                     <td>{{ $user->name }}</td>
                     <td>
-                        <div>
+                        <div class="d-flex align-items-center">
                             <x-user.form-user :id="$user->id" />
+                               <form action="{{ route('users.destroy', $user->id) }}" method="POST" style="display:inline"
+                                    onsubmit="return confirm('Apakah anda yakin ingin menghapus user ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger mx-1">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+
+                                <x-user.reset-password :id="$user->id" />
+
+
                         </div>
                     </td>
                 </tr>

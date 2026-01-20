@@ -35,7 +35,7 @@ class ProductController extends Controller
             'kategori_id.exists' => "Kategori tidak valid!",
             'stok.required' => "Stok harus diisi!",
             'stok.numeric' => "Stok harus berupa angka!",
-            
+
         ]);
 
         $newRequest = [
@@ -67,4 +67,30 @@ class ProductController extends Controller
         toast()->success("Data Berhasil dihapus");
         return redirect()->route('master-data.product.index');
     }
+
+    public function getData(){
+        $search = request()->query('search');
+
+        $query = Product::query();
+
+        $product = $query->where('nama_produk', 'like', '%' . $search . '%')->get();
+        return response()->json($product);
+    }
+
+    public function cekStok(){
+    $id = request()->query('id');
+
+    $product = Product::find($id);
+
+    if(!$product){
+        return response()->json([
+            'stok' => 0
+        ]);
+    }
+
+    return response()->json([
+        'stok' => $product->stok
+    ]);
+}
+
 }
