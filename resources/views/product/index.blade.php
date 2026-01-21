@@ -33,7 +33,7 @@
                         <td>Rp. {{ number_format($product->harga_jual) }}</td>
                         <td>{{ number_format($product->stok) }}</td>
                         <td>
-                            <p class="badge {{ $product->is_active ? 'badge-succes' : 'badge danger' }}">
+                            <p class="badge {{ $product->is_active ? 'badge-success' : 'badge-danger' }}">
                                 {{ $product->is_active ? 'Aktif' : 'Tidak Aktif'}}
                             </p>
                         </td>

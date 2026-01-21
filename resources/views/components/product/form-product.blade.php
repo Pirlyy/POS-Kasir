@@ -23,7 +23,7 @@
             <div class="form-group my-1">
               <label for="">Nama Produk</label>
               <input type="text" name="nama_produk" class="form-control"
-                value="{{ old('nama_produk', $product->nama_produk ?? '') }}">
+                value="{{ old('nama_produk', $products->nama_produk ?? '') }}">
             </div>
             <div class="form-group my-1 position-relative" id="kategori_sugestions">
               <label>Kategori Produk</label>
@@ -82,24 +82,22 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-  const input = document.getElementById('kategori_input');
-  const hiddenInput = document.getElementById('kategori_id');
-  const suggestionsBox = document.getElementById('kategori_suggestions');
+document.querySelectorAll('.modal').forEach(modal => {
+
+  const input = modal.querySelector('#kategori_input');
+  const hiddenInput = modal.querySelector('#kategori_id');
+  const suggestionsBox = modal.querySelector('#kategori_suggestions');
+
+  if (!input || !hiddenInput || !suggestionsBox) return;
 
   input.addEventListener('input', function () {
     const query = this.value.trim();
 
-    // 🔴 BELUM MENGETIK → JANGAN TAMPILKAN APA APA
-    if (query.length === 0) {
+    // ⛔ belum mengetik
+    if (query.length < 2) {
       suggestionsBox.classList.add('d-none');
       suggestionsBox.innerHTML = '';
       hiddenInput.value = '';
-      return;
-    }
-
-    // opsional: minimal 2 huruf
-    if (query.length < 2) {
-      suggestionsBox.classList.add('d-none');
       return;
     }
 
@@ -108,7 +106,7 @@
       .then(data => {
         suggestionsBox.innerHTML = '';
 
-        if (data.length === 0) {
+        if (!data.length) {
           suggestionsBox.classList.add('d-none');
           return;
         }
@@ -119,11 +117,11 @@
           btn.className = 'list-group-item list-group-item-action';
           btn.textContent = item.nama_kategori;
 
-          btn.addEventListener('click', function () {
+          btn.onclick = () => {
             input.value = item.nama_kategori;
             hiddenInput.value = item.id;
             suggestionsBox.classList.add('d-none');
-          });
+          };
 
           suggestionsBox.appendChild(btn);
         });
@@ -132,10 +130,29 @@
       });
   });
 
-  // klik di luar → tutup suggestion
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.form-group')) {
+  // klik luar → tutup suggestion
+  document.addEventListener('click', e => {
+    if (!modal.contains(e.target)) {
       suggestionsBox.classList.add('d-none');
     }
   });
+
+});
+</script>
+
+<script>
+$('.btn-edit').on('click', function () {
+
+  const modal = $($(this).data('target'));
+
+  modal.find('#kategori_input')
+    .val($(this).data('kategori-nama'));
+
+  modal.find('#kategori_id')
+    .val($(this).data('kategori-id'));
+
+  modal.find('#kategori_suggestions')
+    .addClass('d-none')
+    .html('');
+});
 </script>
