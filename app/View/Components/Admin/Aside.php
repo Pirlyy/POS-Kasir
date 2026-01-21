@@ -23,6 +23,13 @@ class Aside extends Component
                 "is_dropdown" => false
             ],
             [
+                "label" => "Data Users",
+                "icon" => "fas fa-Users",
+                "route_name" => "users.index",
+                "route_active" => "users.*",
+                "is_dropdown" => false
+            ],
+            [
                 "label" => "Master Data",
                 "icon" => "fas fa-database",
                 "route_active" => "master-data.*",
@@ -42,7 +49,14 @@ class Aside extends Component
 
                 ]
 
-            ]
+            ],
+            [
+                "label" => "Penerimaan Barang",
+                "icon" => "fas fa-truck-loading",
+                "route_name" => "penerimaan-barang.index",
+                "route_active" => "penerimaan-barang.*",
+                "is_dropdown" => false
+            ],
         ];
     }
 
