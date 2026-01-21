@@ -23,6 +23,12 @@ Route::middleware('auth')->group(function() {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
             Route::delete('/destroy/{id}', 'destroy')->name('destroy');
+
+            Route::get('/autocomplete', function (Illuminate\Http\Request $request) {
+            return \App\Models\Kategori::where('nama_kategori', 'like', '%' . $request->q . '%')
+                ->limit(5)
+                ->get();
+        });
         });
         Route::prefix('product')->as('product.')->controller(ProductController::class)->group(function() {
             Route::get('/', 'index')->name('index');
