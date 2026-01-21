@@ -115,6 +115,10 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <!-- Bootstrap 4 -->
 <script src="{{ asset('adminlte') }}/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="{{ asset('adminlte/plugins/select2/css/select2.min.css') }}">
+<link rel="stylesheet" href="{{ asset('adminlte/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
+<script src="{{ asset('adminlte/plugins/select2/js/select2.full.min.js') }}"></script>
+
 <!-- AdminLTE App -->
 <script src="{{ asset('adminlte') }}/dist/js/adminlte.min.js"></script>
 <!-- DataTables  & Plugins -->
