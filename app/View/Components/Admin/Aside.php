@@ -57,6 +57,14 @@ class Aside extends Component
                 "route_active" => "penerimaan-barang.*",
                 "is_dropdown" => false
             ],
+             
+             [
+                "label" => "Pengeluaran Barang",
+                "icon" => "fas fa-store",
+                "route_name" => "pengeluaran-barang.index",
+                "route_active" => "pengeluaran-barang.*",
+                "is_dropdown" => false
+            ],
             [
                 "label" => "Laporan",
                 "icon" => "fas fa-file-invoice",
@@ -69,6 +77,7 @@ class Aside extends Component
                       "route_active" => "laporan.penerimaan-barang.*",
                       "route_name" => "laporan.penerimaan-barang.laporan",
                     ],
+                    
 
 
                 ]

@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\PenerimaanBarangController;
+use App\Http\Controllers\PengeluaranBarangController;
 
 
 Route::get('/', function () {
@@ -18,10 +19,12 @@ Route::middleware('auth')->group(function() {
     Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard',[DashboardController::class, 'index'])->name('dashboard');
 
-
+Route::get('/cek-harga-produk', [PengeluaranBarangController::class, 'cekharga'])
+    ->name('get-data.cek-stok');
     Route::prefix('get-data')->as('get-data.')->group(function (){
-        Route::get('/produk',[ProductController::class, 'getData'])->name('produk');
+        Route::get('/produk',[ProductController::class, 'getData'])->name('produk'); 
              Route::get('/cek-stok-produk',[ProductController::class, 'cekStok'])->name('cek-stok');
+             Route::get('/cek-harga-pack',[ProductController::class, 'cekHarga'])->name('cek-harga');
     });
     //master-data.kategori.index
     //master-data/kategori/index
@@ -57,6 +60,12 @@ Route::middleware('auth')->group(function() {
          Route::post('/', 'store')->name('store');
 
     });
+     Route::prefix('pengeluaran-barang')->as('pengeluaran-barang.')->controller(PengeluaranBarangController::class)->group(function (){
+         Route::get('/', 'index')->name('index');
+         Route::post('/', 'store')->name('store');
+
+    });
+
 
     Route::prefix('laporan')->as('laporan.')->group(function(){
     Route::prefix('penerimaan-barang')->as('penerimaan-barang.')->controller(PenerimaanBarangController::class)->group(function(){
