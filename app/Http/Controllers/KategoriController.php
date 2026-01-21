@@ -43,9 +43,9 @@ class KategoriController extends Controller
     }
     public function destroy(String $id)
     {
-        $kategori= kategori::findOrFail($id);
+        $kategori= Kategori::findOrFail($id);
         $kategori->delete();
-        toast()->success('Data Kategori berhasil dihapus', 'Success');
+        toast()->error('Data Kategori berhasil dihapus', 'Success',);
         return redirect()->route('master-data.kategori.index');
     }
 }
