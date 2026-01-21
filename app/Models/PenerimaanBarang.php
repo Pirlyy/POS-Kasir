@@ -19,4 +19,8 @@ class PenerimaanBarang extends Model
 
         return $nomor;
     }
+
+    public function items(){
+        return $this->hasMany(ItemPenerimaanBarang::class, 'nomor_penerimaan', 'nomor_penerimaan');
+    }
 }
