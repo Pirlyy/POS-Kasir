@@ -65,7 +65,26 @@ class PengeluaranBarangController extends Controller
             'bayar' => $bayar,
             'kembalian' => $kembalian,
             'total_harga' => $total,
-        ]); 
-        dd($bayar, $total, $kembalian, );
+            
+        ]);
+       
+
+      foreach ($produk as $item) {
+
+    $product = Product::findOrFail($item['produk_id']);
+
+    $data->itemPengeluaranBarang()->create([
+        'product_id' => $product->id,
+        'jumlah'     => $item['qty'],
+        'harga_jual' => $product->harga_jual, // ✅ AMAN
+        'sub_total'  => $item['sub_total'],
+    ]);
+
+    $product->decrement('stok', $item['qty']);
+    return redirect()->route('pengeluaran-barang.index');
+}
+
+
     }
 }
+ 

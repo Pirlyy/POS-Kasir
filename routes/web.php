@@ -73,6 +73,11 @@ Route::get('/cek-harga-produk', [PengeluaranBarangController::class, 'cekharga']
         Route::get('/laporan/{nomor_penerimaan}/detail','detailLaporan')
             ->name('detail-laporan');
     });
+        Route::prefix('pengeluaran-barang')->as('pengeluaran-barang.')->controller(PengeluaranBarangController::class)->group(function(){
+            Route::get('/laporan', 'laporan')->name('laporan');
+            Route::get('/laporan/{nomor_pengeluaran}/detail','detailLaporan')
+                ->name('detail-laporan');
+        });
 });
 
 

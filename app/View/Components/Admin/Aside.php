@@ -78,6 +78,11 @@ class Aside extends Component
                       "route_name" => "laporan.penerimaan-barang.laporan",
                     ],
                     
+                    [
+                      "label" => "Pengeluaran barang",
+                      "route_active" => "laporan.pengeluaran-barang.*",
+                      "route_name" => "laporan.pengeluaran-barang.laporan",
+                    ],
 
 
                 ]
