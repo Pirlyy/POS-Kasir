@@ -16,6 +16,7 @@
                         <th>No</th>
                         <th>Sku</th>
                         <th>Nama Produk</th>
+                        <th>Kategori</th>
                         <th>Harga Beli</th>
                         <th>Harga Jual</th>
                         <th>Stok</th>
@@ -29,6 +30,7 @@
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $product->sku }}</td>
                         <td>{{ $product->nama_produk }}</td>
+                        <td>{{ $product->kategori->nama_kategori }}</td>
                         <td>Rp. {{ number_format($product->harga_beli_pokok) }}</td>
                         <td>Rp. {{ number_format($product->harga_jual) }}</td>
                         <td>{{ number_format($product->stok) }}</td>

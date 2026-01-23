@@ -8,7 +8,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::all();
+        $products = Product::with('kategori')->get();
         confirmDelete('Hapus data kategori ini?', 'Hapus', 'Batal');
         return view('product.index', compact('products'));
     }

@@ -28,15 +28,12 @@
             <div class="form-group my-1 position-relative" id="kategori_sugestions">
               <label>Kategori Produk</label>
 
-              <input type="text" id="kategori_input" class="form-control" placeholder="Ketik kategori..."
-                autocomplete="off">
+              <input type="text" class="form-control kategori-input" autocomplete="off">
+               <input type="hidden" name="kategori_id" class="kategori-id"  value="{{ old('kategori_nama', $products->kategori->nama_kategori ?? '') }}">
 
-              <input type="hidden" name="kategori_id" id="kategori_id">
+              <div class="list-group position-absolute w-100 d-none kategori-suggestions"></div>
 
-              <div id="kategori_suggestions" class="list-group position-absolute w-100 d-none" style="z-index: 1000;">
-              </div>
             </div>
-
             <div class="form-group my-1">
               <label for="">Harga Jual</label>
               <input type="number" name="harga_jual" id="harga_jual" class="form-control" value="{{ $id ?
@@ -82,77 +79,61 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-document.querySelectorAll('.modal').forEach(modal => {
+document.addEventListener('input', function (e) {
 
-  const input = modal.querySelector('#kategori_input');
-  const hiddenInput = modal.querySelector('#kategori_id');
-  const suggestionsBox = modal.querySelector('#kategori_suggestions');
+  if (!e.target.classList.contains('kategori-input')) return;
 
-  if (!input || !hiddenInput || !suggestionsBox) return;
+  const input = e.target;
+  const wrapper = input.closest('.form-group');
+  const hiddenInput = wrapper.querySelector('.kategori-id');
+  const suggestionsBox = wrapper.querySelector('.kategori-suggestions');
 
-  input.addEventListener('input', function () {
-    const query = this.value.trim();
+  const query = input.value.trim();
 
-    // ⛔ belum mengetik
-    if (query.length < 2) {
-      suggestionsBox.classList.add('d-none');
+  if (query.length < 2) {
+    suggestionsBox.classList.add('d-none');
+    suggestionsBox.innerHTML = '';
+    hiddenInput.value = '';
+    return;
+  }
+
+  fetch(`/master-data/product/autocomplete?q=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(data => {
+
       suggestionsBox.innerHTML = '';
-      hiddenInput.value = '';
-      return;
-    }
 
-    fetch(`/master-data/kategori/autocomplete?q=${encodeURIComponent(query)}`)
-      .then(res => res.json())
-      .then(data => {
-        suggestionsBox.innerHTML = '';
+      if (!data.length) {
+        suggestionsBox.classList.add('d-none');
+        return;
+      }
 
-        if (!data.length) {
+      data.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'list-group-item list-group-item-action';
+        btn.textContent = item.nama_kategori;
+
+        btn.onclick = () => {
+          input.value = item.nama_kategori;
+          hiddenInput.value = item.id;
           suggestionsBox.classList.add('d-none');
-          return;
-        }
+        };
 
-        data.forEach(item => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'list-group-item list-group-item-action';
-          btn.textContent = item.nama_kategori;
-
-          btn.onclick = () => {
-            input.value = item.nama_kategori;
-            hiddenInput.value = item.id;
-            suggestionsBox.classList.add('d-none');
-          };
-
-          suggestionsBox.appendChild(btn);
-        });
-
-        suggestionsBox.classList.remove('d-none');
+        suggestionsBox.appendChild(btn);
       });
-  });
 
-  // klik luar → tutup suggestion
-  document.addEventListener('click', e => {
-    if (!modal.contains(e.target)) {
-      suggestionsBox.classList.add('d-none');
-    }
-  });
-
+      suggestionsBox.classList.remove('d-none');
+    });
 });
 </script>
 
 <script>
-$('.btn-edit').on('click', function () {
-
-  const modal = $($(this).data('target'));
-
-  modal.find('#kategori_input')
-    .val($(this).data('kategori-nama'));
-
-  modal.find('#kategori_id')
-    .val($(this).data('kategori-id'));
-
-  modal.find('#kategori_suggestions')
-    .addClass('d-none')
-    .html('');
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('.kategori-suggestions').forEach(box => {
+    if (!box.contains(e.target)) {
+      box.classList.add('d-none');
+    }
+  });
 });
 </script>
