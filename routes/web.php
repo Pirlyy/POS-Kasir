@@ -97,6 +97,8 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
+            // ✅ PRINT STRUK
+Route::get('/{id}/print', 'print')->name('print');
         });
 
     // =====================
@@ -121,6 +123,8 @@ Route::middleware('auth')->group(function () {
             ->group(function () {
                 Route::get('/laporan', 'laporan')->name('laporan');
                 // ❌ TIDAK ADA ROUTE DETAIL
+
+
             });
     });
 });
