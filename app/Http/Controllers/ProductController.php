@@ -77,19 +77,22 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
-    public function cekStok(){
+   public function cekStok()
+{
     $id = request()->query('id');
 
     $product = Product::find($id);
 
-    if(!$product){
+    if (!$product) {
         return response()->json([
-            'stok' => 0
+            'stok' => 0,
+            'harga_jual' => 0
         ]);
     }
 
     return response()->json([
-        'stok' => $product->stok
+        'stok' => $product->stok,
+        'harga_jual' => $product->harga_jual
     ]);
 }
 

@@ -44,7 +44,7 @@ hr {
 <div class="struk">
 
     <div class="center">
-        <b>TOKO MAJU JAYA</b><br>
+        <b>PT Nusa Indo</b><br>
         Jl. Contoh No 123<br>
         ======================
     </div>

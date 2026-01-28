@@ -43,20 +43,20 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($pengeluaran->items as $i => $item)
-                    <tr>
-                        <td>{{ $i + 1 }}</td>
-                        <td>{{ $item->nama_produk }}</td>
-                        <td>{{ $item->qty }} pcs</td>
-                        <td>Rp. {{ number_format($item->harga) }}</td>
-                        <td>Rp. {{ number_format($item->sub_total) }}</td>
-                    </tr>
-                @endforeach
-                <tr>
-                    <th colspan="4" class="text-end">Total</th>
-                    <th>Rp. {{ number_format($pengeluaran->total_harga) }}</th>
-                </tr>
-            </tbody>
+@foreach ($pengeluaran->items as $i => $item)
+<tr>
+    <td>{{ $i + 1 }}</td>
+    <td>{{ $item->product->nama_produk ?? '-' }}</td>
+    <td>{{ $item->jumlah }} pcs</td>
+    <td>Rp. {{ number_format($item->harga_jual) }}</td>
+    <td>Rp. {{ number_format($item->sub_total) }}</td>
+</tr>
+@endforeach
+<tr>
+    <th colspan="4" class="text-end">Total</th>
+    <th>Rp. {{ number_format($pengeluaran->total_harga) }}</th>
+</tr>
+</tbody>
         </table>
 
     </div>
