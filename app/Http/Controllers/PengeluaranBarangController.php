@@ -90,7 +90,9 @@ class PengeluaranBarangController extends Controller
         }
 
         toast()->success('Data pengeluaran barang berhasil disimpan');
-        return redirect()->route('pengeluaran-barang.index');
+
+// redirect ke halaman print struk
+return redirect()->route('pengeluaran-barang.print', $pengeluaran->id);
     }
 
     /**
@@ -118,4 +120,12 @@ class PengeluaranBarangController extends Controller
 
         return view('pengeluaran-barang.detail', compact('pengeluaran'));
     }
+
+    public function print($id)
+{
+    $pengeluaran = PengeluaranBarang::with('items.product')
+        ->findOrFail($id);
+
+    return view('pengeluaran-barang.print', compact('pengeluaran'));
+}
 }

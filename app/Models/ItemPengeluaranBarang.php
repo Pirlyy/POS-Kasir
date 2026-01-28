@@ -13,5 +13,10 @@ class ItemPengeluaranBarang extends Model
         'harga_jual',
         'sub_total',
     ];
+
+    // ✅ INI YANG KURANG
+public function product()
+{
+return $this->belongsTo(Product::class, 'product_id');
 }
-    
+}
