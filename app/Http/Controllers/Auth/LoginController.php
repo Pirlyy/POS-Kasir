@@ -12,28 +12,37 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function handleLogin(Request $request){
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|min:6'
-        ],[
-            'email.required' => 'Email is required',
-            'email.email' => 'Please enter a valid email address',
-            'password.required' => 'Password is required',
-            'password.min' => 'Password must be at least 6 characters long'
-        ]);
+    public function handleLogin(Request $request)
+{
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required|min:6'
+    ], [
+        'email.required' => 'Email is required',
+        'email.email' => 'Please enter a valid email address',
+        'password.required' => 'Password is required',
+        'password.min' => 'Password must be at least 6 characters long'
+    ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            return redirect()->intended('/dashboard');
+    if (Auth::attempt($credentials)) {
+        $request->session()->regenerate();
+
+        $user = Auth::user();
+
+        // 🔥 ROLE CHECK
+        if ($user->role === 'kasir') {
+            return redirect()->route('kasir.index');
         }
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
+        // ADMIN / DEFAULT
+        return redirect()->route('dashboard');
     }
 
-    public function logout(Request $request) {
+    return back()->withErrors([
+        'email' => 'The provided credentials do not match our records.',
+    ])->onlyInput('email');
+}
+public function logout(Request $request) {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

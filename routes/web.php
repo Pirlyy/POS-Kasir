@@ -8,6 +8,8 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\PenerimaanBarangController;
 use App\Http\Controllers\PengeluaranBarangController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\KasirController;
+
 
 Route::get('/', function () {
     return view('auth.login');
@@ -50,6 +52,16 @@ Route::middleware('auth')->group(function () {
             Route::post('/gantipassword', 'gantipassword')->name('ganti-password');
             Route::post('/reset-password', 'resetpassword')->name('reset-password');
         });
+
+    /*
+|--------------------------------------------------------------------------
+| KASIR (POS MODE)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->group(function () {
+    Route::get('/kasir', [KasirController::class, 'index'])->name('kasir.index');
+});
+
 
     // =====================
     // MASTER DATA

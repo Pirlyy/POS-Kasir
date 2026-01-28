@@ -9,6 +9,11 @@
         <h4 class="card-title">
             Laporan Pengeluaran Barang (Transaksi)
             #{{ $pengeluaran->nomor_pengeluaran }}
+
+            <a href="{{ route('laporan.pengeluaran-barang.laporan') }}"
+               class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Kembali
+            </a>
         </h4>
     </div>
 
