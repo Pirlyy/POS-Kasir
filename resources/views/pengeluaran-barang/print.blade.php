@@ -45,7 +45,7 @@ hr {
 
     <div class="center">
         <b>PT Nusa Indo</b><br>
-        Jl. Contoh No 123<br>
+        Jl. Rungkut Asri Timur XV H No.2, V No.2 Blok H, Rungkut Kidul<br>
         ======================
     </div>
 
