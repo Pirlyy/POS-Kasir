@@ -191,22 +191,80 @@ document.getElementById('uang-bayar').addEventListener('input', function(){
         kembali >= 0 ? 'Rp ' + kembali.toLocaleString() : '';
 });
 </script>
-
+<script src="https://app.sandbox.midtrans.com/snap/snap.js"
+    data-client-key="{{ config('services.midtrans.client_key') }}">
+</script>
 <script>
 function submitCheckout(){
     let method = document.getElementById('payment-method').value;
-    let bayar = parseInt(document.getElementById('uang-bayar').value || 0);
 
     if (Object.keys(cart).length === 0) {
         alert('Keranjang kosong');
         return;
     }
 
-    if (method === 'cash' && bayar < total) {
-        alert('Uang customer kurang');
+    // ======================
+    // QRIS (MIDTRANS)
+    // ======================
+    if(method === 'qris'){
+        fetch("{{ route('kasir.midtrans.token') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({
+                total: total
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+
+            if(!res.token){
+                alert('Token Midtrans gagal');
+                return;
+            }
+
+            window.snap.pay(res.token, {
+                onSuccess: function(result){
+
+                    // 🔥 SIMPAN TRANSAKSI
+                    fetch("{{ route('kasir.checkout') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                        },
+                        body: JSON.stringify({
+                            total: total,
+                            payment_method: 'qris',
+                            midtrans_result: result,
+                            items: Object.values(cart)
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(() => {
+                        alert('Pembayaran QRIS berhasil');
+                        location.reload();
+                    });
+
+                },
+                onPending: function(){
+                    alert('Menunggu pembayaran QRIS');
+                },
+                onError: function(){
+                    alert('Pembayaran QRIS gagal');
+                }
+            });
+
+        });
+
         return;
     }
 
+    // ======================
+    // CASH / BANK
+    // ======================
     fetch("{{ route('kasir.checkout') }}", {
         method: "POST",
         headers: {
@@ -215,26 +273,26 @@ function submitCheckout(){
         },
         body: JSON.stringify({
             total: total,
-            bayar: method === 'cash' ? bayar : total,
+            bayar: total,
             payment_method: method,
             items: Object.values(cart)
         })
     })
     .then(res => res.json())
-    .then(res => {
-        if(res.success){
-            alert('Transaksi berhasil');
-            cart = {};
-            renderCart();
-            toggleCart();
-            location.reload();
-        }else{
-            alert(res.message);
-        }
-    })
-    .catch(() => alert('Checkout gagal'));
+    .then(() => {
+        alert('Transaksi berhasil');
+        location.reload();
+    });
 }
 </script>
+
+
+<script>
+console.log('SNAP:', window.snap);
+</script>
+
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 @yield('script')

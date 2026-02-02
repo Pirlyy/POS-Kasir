@@ -32,37 +32,35 @@ class KasirController extends Controller
      * Generate Snap Token Midtrans (QRIS / E-Wallet)
      */
     public function midtransToken(Request $request)
-    {
-        // VALIDASI
-        $request->validate([
-            'total' => 'required|numeric|min:1',
-        ]);
+{
+    $request->validate([
+        'total' => 'required|numeric|min:1',
+    ]);
 
-        // CONFIG MIDTRANS (SANDBOX)
-        Config::$serverKey    = config('services.midtrans.server_key');
-        Config::$isProduction = config('services.midtrans.is_production');
-        Config::$isSanitized  = true;
-        Config::$is3ds        = true;
+    // CONFIG MIDTRANS (BENAR)
+    Config::$serverKey    = config('services.midtrans.server_key');
+    Config::$isProduction = config('services.midtrans.is_production');
+    Config::$isSanitized  = true;
+    Config::$is3ds        = true;
 
-        // PARAM TRANSAKSI
-        $params = [
-            'transaction_details' => [
-                'order_id'      => 'POS-' . now()->format('YmdHis') . '-' . rand(100,999),
-                'gross_amount' => (int) $request->total,
-            ],
-            'customer_details' => [
-                'first_name' => auth()->user()->name ?? 'Customer',
-            ],
-            'enabled_payments' => ['qris'], // 🔥 QRIS ONLY
-        ];
+    $params = [
+        'transaction_details' => [
+            'order_id'      => 'POS-' . time(),
+            'gross_amount' => (int) $request->total,
+        ],
+        'customer_details' => [
+            'first_name' => 'Customer',
+        ],
+        'enabled_payments' => ['qris'], // QRIS ONLY
+    ];
 
-        // GENERATE TOKEN
-        $snapToken = Snap::getSnapToken($params);
+    $snapToken = Snap::getSnapToken($params);
 
-        return response()->json([
-            'token' => $snapToken
-        ]);
-    }
+    return response()->json([
+        'token' => $snapToken
+    ]);
+}
+
 
     public function checkout(Request $request)
 {
@@ -91,5 +89,7 @@ class KasirController extends Controller
         ], 400);
     }
 }
+
+
 
 }

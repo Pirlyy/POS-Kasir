@@ -64,8 +64,9 @@ Route::middleware('auth')->group(function () {
             ->name('kasir.index');
 
         // ✅ MIDTRANS SNAP TOKEN (QRIS SANDBOX)
-        Route::post('/kasir/midtrans-token', [KasirController::class, 'midtransToken'])
-            ->name('kasir.midtrans.token');
+       Route::post('/kasir/midtrans-token', [KasirController::class, 'midtransToken'])
+    ->name('kasir.midtrans.token');
+
 
         Route::post('/kasir/checkout', [KasirController::class, 'checkout'])
     ->name('kasir.checkout');
