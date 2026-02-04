@@ -6,12 +6,11 @@ use App\Models\PengeluaranBarang;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class PengeluaranBarangController extends Controller
 {
     /**
-     * Halaman transaksi pengeluaran barang
+     * HALAMAN TRANSAKSI (ADMIN)
      */
     public function index()
     {
@@ -19,54 +18,33 @@ class PengeluaranBarangController extends Controller
     }
 
     /**
-     * Cek harga & stok produk (AJAX)
-     */
-    public function cekharga(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|exists:products,id'
-        ]);
-
-        $product = Product::findOrFail($request->id);
-
-        return response()->json([
-            'harga_jual' => $product->harga_jual,
-            'stok'       => $product->stok
-        ]);
-    }
-
-    /**
-     * Simpan transaksi pengeluaran barang
+     * SIMPAN TRANSAKSI (ADMIN & KASIR AJAX)
      */
     public function store(Request $request)
     {
         if (empty($request->produk)) {
-            toast()->error('Data produk belum ditambahkan');
-            return redirect()->back();
+            return $request->expectsJson()
+                ? response()->json(['message' => 'Produk kosong'], 422)
+                : redirect()->back()->withErrors('Produk kosong');
         }
 
         $request->validate([
             'produk' => 'required|array|min:1',
             'bayar'  => 'required|numeric|min:1',
-        ], [
-            'produk.required' => 'Produk harus diisi',
-            'produk.min'      => 'Minimal 1 produk harus ditambahkan',
-            'bayar.required'  => 'Jumlah bayar harus diisi',
-            'bayar.numeric'   => 'Jumlah bayar harus berupa angka',
-            'bayar.min'       => 'Jumlah bayar minimal 1'
         ]);
 
         $produk = collect($request->produk);
-        $bayar  = $request->bayar;
         $total  = $produk->sum('sub_total');
-        $kembalian = (int) $bayar - (int) $total;
+        $bayar  = (int) $request->bayar;
+        $kembalian = $bayar - $total;
 
         if ($bayar < $total) {
-            toast()->error('Jumlah bayar tidak mencukupi');
-            return redirect()->back()->withInput();
+            return $request->expectsJson()
+                ? response()->json(['message' => 'Bayar kurang'], 422)
+                : redirect()->back()->withErrors('Bayar kurang');
         }
 
-        // SIMPAN HEADER TRANSAKSI
+        // HEADER
         $pengeluaran = PengeluaranBarang::create([
             'nomor_pengeluaran' => PengeluaranBarang::nomerpengeluaran(),
             'nama_petugas'      => Auth::user()->name,
@@ -75,57 +53,58 @@ class PengeluaranBarangController extends Controller
             'total_harga'       => $total,
         ]);
 
-        // SIMPAN DETAIL & KURANGI STOK
+        // DETAIL + STOK
         foreach ($produk as $item) {
             $product = Product::findOrFail($item['produk_id']);
 
             $pengeluaran->items()->create([
                 'product_id' => $product->id,
-                'jumlah'        => $item['qty'],
-                'harga_jual'      => $product->harga_jual,
+                'jumlah'     => $item['qty'],
+                'harga_jual' => $product->harga_jual,
                 'sub_total'  => $item['sub_total'],
             ]);
 
             $product->decrement('stok', $item['qty']);
         }
 
-        toast()->success('Data pengeluaran barang berhasil disimpan');
+        // AJAX (KASIR)
+        if ($request->expectsJson()) {
+            return response()->json(['id' => $pengeluaran->id]);
+        }
 
-// redirect ke halaman print struk
-return redirect()->route('pengeluaran-barang.print', $pengeluaran->id);
+        // ADMIN
+        return redirect()->route('pengeluaran-barang.print', $pengeluaran->id);
     }
 
     /**
-     * LAPORAN PENGELUARAN BARANG
-     * ➜ LANGSUNG TAMPIL DETAIL TRANSAKSI TERAKHIR
+     * LAPORAN ADMIN (LIST)
      */
     public function laporan()
     {
-        $pengeluaran = PengeluaranBarang::with('items')
-            ->latest()
-            ->firstOrFail();
-
-        return view('pengeluaran-barang.detail', compact('pengeluaran'));
+        $data = PengeluaranBarang::orderBy('created_at', 'desc')->get();
+        return view('laporan.pengeluaran-barang.laporan', compact('data'));
     }
 
     /**
-     * (OPSIONAL) DETAIL BERDASARKAN NOMOR
-     * Kalau suatu saat dibutuhkan
+     * DETAIL LAPORAN ADMIN
      */
     public function detailLaporan($nomor_pengeluaran)
     {
-        $pengeluaran = PengeluaranBarang::with('items')
+        $pengeluaran = PengeluaranBarang::with('items.product')
             ->where('nomor_pengeluaran', $nomor_pengeluaran)
             ->firstOrFail();
 
         return view('pengeluaran-barang.detail', compact('pengeluaran'));
     }
 
+    /**
+     * PRINT STRUK (ADMIN & KASIR)
+     */
     public function print($id)
-{
-    $pengeluaran = PengeluaranBarang::with('items.product')
-        ->findOrFail($id);
+    {
+        $pengeluaran = PengeluaranBarang::with('items.product')
+            ->findOrFail($id);
 
-    return view('pengeluaran-barang.print', compact('pengeluaran'));
-}
+        return view('pengeluaran-barang.print', compact('pengeluaran'));
+    }
 }
