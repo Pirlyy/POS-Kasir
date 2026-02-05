@@ -51,8 +51,26 @@ Route::middleware('auth')->group(function () {
             Route::post('/reset-password', 'resetpassword')->name('reset-password');
         });
 
-        // MASTER DATA
-        Route::prefix('master-data')->as('master-data.')->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | KASIR (POS MODE) - ONLY ROLE KASIR
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['kasir'])->group(function () {
+
+        // halaman kasir
+        Route::get('/kasir', [KasirController::class, 'index'])
+            ->name('kasir.index');
+
+        // ✅ MIDTRANS SNAP TOKEN (QRIS SANDBOX)
+        Route::post('/kasir/midtrans-token', [KasirController::class, 'midtransToken'])
+            ->name('kasir.midtrans.token');
+    });
+
+    // =====================
+    // MASTER DATA
+    // =====================
+    Route::prefix('master-data')->as('master-data.')->group(function () {
 
             Route::prefix('kategori')->as('kategori.')
                 ->controller(KategoriController::class)->group(function () {
