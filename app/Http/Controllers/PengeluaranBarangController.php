@@ -82,7 +82,7 @@ class PengeluaranBarangController extends Controller
     public function laporan()
     {
         $data = PengeluaranBarang::orderBy('created_at', 'desc')->get();
-        return view('laporan.pengeluaran-barang.laporan', compact('data'));
+        return view('pengeluaran-barang.laporan', compact('data'));
     }
 
     /**

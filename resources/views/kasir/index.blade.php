@@ -5,25 +5,47 @@
 
     {{-- LEFT : PRODUK --}}
     <div class="flex-fill p-3 bg-light">
-        <h4 class="mb-3">🧾 Kasir POS</h4>
+        <h4 class="mb-3">
+            <i class="fas fa-cash-register mr-1"></i> Kasir POS
+        </h4>
 
         <div class="row">
             @foreach($products as $p)
             <div class="col-md-3 mb-3">
                 <button type="button"
-                        class="btn btn-light w-100 border product-btn"
+                        class="btn btn-light w-100 border product-btn text-left"
                         data-id="{{ $p->id }}"
                         data-name="{{ $p->nama_produk }}"
                         data-price="{{ $p->harga_jual }}"
                         data-stock="{{ $p->stok }}">
 
-                    <div class="bg-secondary text-white d-flex
-                                align-items-center justify-content-center mb-2"
-                         style="height:80px">📦</div>
+                    {{-- IMAGE --}}
+                    <div class="mb-2" style="height:100px;">
+                        @if($p->image)
+                            <img src="{{ asset('storage/' . $p->image) }}"
+                                 alt="{{ $p->nama_produk }}"
+                                 class="w-100 h-100"
+                                 style="object-fit:cover;border-radius:6px;">
+                        @else
+                            <div class="bg-secondary text-white d-flex
+                                        align-items-center justify-content-center h-100"
+                                 style="border-radius:6px;">
+                                <i class="far fa-image fa-2x"></i>
+                            </div>
+                        @endif
+                    </div>
 
-                    <b>{{ $p->nama_produk }}</b><br>
-                    <small>Rp {{ number_format($p->harga_jual) }}</small><br>
-                    <small class="text-muted">Stok {{ $p->stok }}</small>
+                    {{-- INFO --}}
+                    <div>
+                        <b>{{ $p->nama_produk }}</b><br>
+                        <small class="text-success">
+                            Rp {{ number_format($p->harga_jual) }}
+                        </small><br>
+                        <small class="text-muted">
+                            <i class="fas fa-box-open"></i>
+                            Stok {{ $p->stok }}
+                        </small>
+                    </div>
                 </button>
             </div>
             @endforeach
@@ -34,7 +56,9 @@
     <div style="width:380px" class="border-left d-flex flex-column bg-white">
 
         <div class="p-3 border-bottom">
-            <h5>🛒 Keranjang</h5>
+            <h5>
+                <i class="fas fa-shopping-cart mr-1"></i> Keranjang
+            </h5>
         </div>
 
         <div id="cart-items" class="flex-fill p-3 overflow-auto">
@@ -49,21 +73,33 @@
             </div>
 
             <div class="btn-group w-100 mb-2">
-                <button type="button" class="btn btn-success" onclick="pilihCash()">💵 Cash</button>
-                <button type="button" class="btn btn-secondary" onclick="pilihQris()">📱 QRIS</button>
+                <button type="button"
+                        class="btn btn-success"
+                        onclick="pilihCash()">
+                    <i class="fas fa-money-bill-wave"></i> Cash
+                </button>
+                <button type="button"
+                        class="btn btn-secondary"
+                        onclick="pilihQris()">
+                    <i class="fas fa-qrcode"></i> QRIS
+                </button>
             </div>
 
-            <input type="number" id="uang-bayar"
+            <input type="number"
+                   id="uang-bayar"
                    class="form-control mb-2"
                    placeholder="Uang customer">
 
-            <input type="text" id="uang-kembali"
+            <input type="text"
+                   id="uang-kembali"
                    class="form-control mb-2"
-                   placeholder="Kembalian" readonly>
+                   placeholder="Kembalian"
+                   readonly>
 
-            <button type="button" class="btn btn-primary w-100"
+            <button type="button"
+                    class="btn btn-primary w-100"
                     onclick="submitTransaksi()">
-                💾 Simpan & Cetak
+                <i class="fas fa-save"></i> Simpan & Cetak
             </button>
         </div>
     </div>
@@ -126,9 +162,9 @@ function renderCart(){
             <small>Rp ${i.price.toLocaleString()}</small>
             <div class="d-flex justify-content-between mt-1 align-items-center">
                 <div>
-                    <button onclick="kurang(${i.id})">−</button>
+                    <button onclick="kurang(${i.id})" class="btn btn-sm btn-light">−</button>
                     <span class="mx-2">${i.qty}</span>
-                    <button onclick="tambah(${i.id})">+</button>
+                    <button onclick="tambah(${i.id})" class="btn btn-sm btn-light">+</button>
                 </div>
                 <b>Rp ${sub.toLocaleString()}</b>
             </div>
@@ -183,7 +219,6 @@ document.getElementById('uang-bayar')
 function submitTransaksi(){
     if (total <= 0) return alert('Keranjang kosong');
 
-    // BUKA TAB DARI USER CLICK (ANTI BLOCK)
     printWindow = window.open('', '_blank');
 
     if (paymentType === 'qris') {
@@ -208,7 +243,7 @@ function submitTransaksi(){
     }
 }
 
-/* ================= SIMPAN KE SERVER ================= */
+/* ================= SIMPAN ================= */
 function simpanTransaksi(){
     fetch("{{ route('pengeluaran-barang.store') }}", {
         method: 'POST',
@@ -230,7 +265,6 @@ function simpanTransaksi(){
     })
     .then(r => r.json())
     .then(r => {
-        // PASTI KE ROUTE KASIR (BUKAN ADMIN)
         printWindow.location.href =
             "{{ url('/kasir/pengeluaran') }}/" + r.id + "/print";
         location.reload();

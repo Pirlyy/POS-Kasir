@@ -1,20 +1,25 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
     public function index()
     {
         $products = Product::with('kategori')->get();
-        confirmDelete('Hapus data kategori ini?', 'Hapus', 'Batal');
+        confirmDelete('Hapus data produk ini?', 'Hapus', 'Batal');
+
         return view('product.index', compact('products'));
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         $id = $request->id;
+
         $request->validate([
             'nama_produk' => 'required|unique:products,nama_produk,' . $id,
             'harga_jual' => 'required|numeric|min:0',
@@ -22,24 +27,22 @@ class ProductController extends Controller
             'kategori_id' => 'required|exists:kategoris,id',
             'stok' => 'required|numeric|min:0',
             'stok_minimal' => 'required|numeric|min:0',
-        ],[
-            'nama_produk.required' => "nama produk harus diisi!",
-            'nama_produk.unique' => "nama produk sudah ada",
-            'harga_jual.required' => "harga jual harus diisi!",
-            'harga_jual.numeric' => "Harga jual harus berupa angka!",
-            'harga_jual.min' => "harga jual minimal 0!",
-            'harga_beli_pokok.required' => "Harga beli pokok harus diisi!",
-            'harga_beli_pokok.numeric' => "Harga beli pokok harus berupa angka!",
-            'harga_beli_pokok.min' => "Harga beli pokok minimal 0!",
-            'kategori_id.required' => "Kategori harus diisi!",
-            'kategori_id.exists' => "Kategori tidak valid!",
-            'stok.required' => "Stok harus diisi!",
-            'stok.numeric' => "Stok harus berupa angka!",
-
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'nama_produk.required' => 'Nama produk harus diisi!',
+            'nama_produk.unique' => 'Nama produk sudah ada!',
+            'harga_jual.required' => 'Harga jual harus diisi!',
+            'harga_jual.numeric' => 'Harga jual harus berupa angka!',
+            'harga_beli_pokok.required' => 'Harga beli pokok harus diisi!',
+            'harga_beli_pokok.numeric' => 'Harga beli pokok harus berupa angka!',
+            'kategori_id.required' => 'Kategori harus diisi!',
+            'kategori_id.exists' => 'Kategori tidak valid!',
+            'stok.required' => 'Stok harus diisi!',
+            'stok.numeric' => 'Stok harus berupa angka!',
+            'image.image' => 'File harus berupa gambar!',
         ]);
 
-        $newRequest = [
-            'id' => $id,
+        $data = [
             'nama_produk' => $request->nama_produk,
             'harga_jual' => $request->harga_jual,
             'harga_beli_pokok' => $request->harga_beli_pokok,
@@ -49,51 +52,78 @@ class ProductController extends Controller
             'is_active' => $request->is_active ? true : false,
         ];
 
-        if(!$id) {
-            $newRequest['sku'] = Product::nomorSku();
+        // Generate SKU jika create
+        if (!$id) {
+            $data['sku'] = Product::nomorSku();
         }
+
+        // ================= IMAGE LOGIC =================
+        if ($request->hasFile('image')) {
+
+            // jika update → hapus image lama
+            if ($id) {
+                $oldProduct = Product::find($id);
+                if (
+                    $oldProduct &&
+                    $oldProduct->image &&
+                    Storage::disk('public')->exists($oldProduct->image)
+                ) {
+                    Storage::disk('public')->delete($oldProduct->image);
+                }
+            }
+
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+        // =================================================
+
         Product::updateOrCreate(
-            ["id" => $id],
-            $newRequest
+            ['id' => $id],
+            $data
         );
-        toast()->success('Data Berhasil Dibuat!');
+
+        toast()->success('Data Produk Berhasil Disimpan!');
         return redirect()->route('master-data.product.index');
     }
 
-    public function destroy(String $id)
+    public function destroy(string $id)
     {
-        $product= Product::findOrFail($id);
+        $product = Product::findOrFail($id);
+
+        // hapus image
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
+
         $product->delete();
-        toast()->success("Data Berhasil dihapus");
+
+        toast()->success('Data Produk Berhasil Dihapus!');
         return redirect()->route('master-data.product.index');
     }
 
-    public function getData(){
+    public function getData()
+    {
         $search = request()->query('search');
 
-        $query = Product::query();
+        $products = Product::where('nama_produk', 'like', '%' . $search . '%')->get();
 
-        $product = $query->where('nama_produk', 'like', '%' . $search . '%')->get();
-        return response()->json($product);
+        return response()->json($products);
     }
 
-   public function cekStok()
-{
-    $id = request()->query('id');
+    public function cekStok()
+    {
+        $id = request()->query('id');
+        $product = Product::find($id);
 
-    $product = Product::find($id);
+        if (!$product) {
+            return response()->json([
+                'stok' => 0,
+                'harga_jual' => 0,
+            ]);
+        }
 
-    if (!$product) {
         return response()->json([
-            'stok' => 0,
-            'harga_jual' => 0
+            'stok' => $product->stok,
+            'harga_jual' => $product->harga_jual,
         ]);
     }
-
-    return response()->json([
-        'stok' => $product->stok,
-        'harga_jual' => $product->harga_jual
-    ]);
-}
-
 }

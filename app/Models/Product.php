@@ -14,7 +14,8 @@ class Product extends Model
         'stok',
         'stok_minimal',
         'is_active',
-        'sku'
+        'sku',
+        'image',
     ];
 
     public static function nomorSku(){

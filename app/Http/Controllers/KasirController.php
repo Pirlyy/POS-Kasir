@@ -23,6 +23,8 @@ class KasirController extends Controller
         return view('kasir.index', compact('products'));
     }
 
+    
+
     /**
      * Generate Snap Token Midtrans (QRIS / E-Wallet)
      */
