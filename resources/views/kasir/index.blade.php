@@ -19,30 +19,25 @@
                         data-price="{{ $p->harga_jual }}"
                         data-stock="{{ $p->stok }}">
 
-                    {{-- IMAGE --}}
                     <div class="mb-2" style="height:100px;">
                         @if($p->image)
                             <img src="{{ asset('storage/' . $p->image) }}"
-                                 alt="{{ $p->nama_produk }}"
                                  class="w-100 h-100"
                                  style="object-fit:cover;border-radius:6px;">
                         @else
-                            <div class="bg-secondary text-white d-flex
-                                        align-items-center justify-content-center h-100"
+                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center h-100"
                                  style="border-radius:6px;">
                                 <i class="far fa-image fa-2x"></i>
                             </div>
                         @endif
                     </div>
 
-                    {{-- INFO --}}
                     <div>
                         <b>{{ $p->nama_produk }}</b><br>
                         <small class="text-success">
                             Rp {{ number_format($p->harga_jual) }}
                         </small><br>
                         <small class="text-muted">
-                            <i class="fas fa-box-open"></i>
                             Stok {{ $p->stok }}
                         </small>
                     </div>
@@ -56,9 +51,7 @@
     <div style="width:380px" class="border-left d-flex flex-column bg-white">
 
         <div class="p-3 border-bottom">
-            <h5>
-                <i class="fas fa-shopping-cart mr-1"></i> Keranjang
-            </h5>
+            <h5>Keranjang</h5>
         </div>
 
         <div id="cart-items" class="flex-fill p-3 overflow-auto">
@@ -67,22 +60,39 @@
 
         <div class="p-3 border-top">
 
+            <!-- SUBTOTAL -->
+            <div class="d-flex justify-content-between">
+                <span>Subtotal</span>
+                <span id="cart-subtotal">Rp 0</span>
+            </div>
+
+            <!-- DISKON TOTAL -->
+            <div class="mb-2">
+                <label>Diskon Total</label>
+                <input type="number"
+                       id="diskon-total"
+                       class="form-control"
+                       value="0"
+                       oninput="renderCart()">
+            </div>
+
+            <!-- PAJAK -->
+            <div class="d-flex justify-content-between">
+                <span>Pajak (11%)</span>
+                <span id="cart-pajak">Rp 0</span>
+            </div>
+
+            <hr>
+
+            <!-- TOTAL AKHIR -->
             <div class="d-flex justify-content-between mb-2">
-                <b>Total</b>
+                <b>Total Bayar</b>
                 <b id="cart-total">Rp 0</b>
             </div>
 
             <div class="btn-group w-100 mb-2">
-                <button type="button"
-                        class="btn btn-success"
-                        onclick="pilihCash()">
-                    <i class="fas fa-money-bill-wave"></i> Cash
-                </button>
-                <button type="button"
-                        class="btn btn-secondary"
-                        onclick="pilihQris()">
-                    <i class="fas fa-qrcode"></i> QRIS
-                </button>
+                <button type="button" class="btn btn-success" onclick="pilihCash()">Cash</button>
+                <button type="button" class="btn btn-secondary" onclick="pilihQris()">QRIS</button>
             </div>
 
             <input type="number"
@@ -99,23 +109,24 @@
             <button type="button"
                     class="btn btn-primary w-100"
                     onclick="submitTransaksi()">
-                <i class="fas fa-save"></i> Simpan & Cetak
+                Simpan & Cetak
             </button>
         </div>
     </div>
 </div>
 
-{{-- MIDTRANS --}}
 <script src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 
 <script>
 let cart = {};
+let subtotal = 0;
 let total = 0;
+let pajakPersen = 11;
 let paymentType = 'cash';
 let printWindow = null;
 
-/* ================= TAMBAH PRODUK ================= */
+/* TAMBAH PRODUK */
 document.querySelectorAll('.product-btn').forEach(btn => {
     btn.onclick = () => {
         const id = btn.dataset.id;
@@ -126,7 +137,8 @@ document.querySelectorAll('.product-btn').forEach(btn => {
                 name: btn.dataset.name,
                 price: Number(btn.dataset.price),
                 qty: 1,
-                stock: Number(btn.dataset.stock)
+                stock: Number(btn.dataset.stock),
+                diskon: 0
             };
         } else {
             if (cart[id].qty >= cart[id].stock) {
@@ -139,42 +151,70 @@ document.querySelectorAll('.product-btn').forEach(btn => {
     };
 });
 
-/* ================= RENDER CART ================= */
+/* RENDER CART */
 function renderCart(){
     const el = document.getElementById('cart-items');
     el.innerHTML = '';
-    total = 0;
+    subtotal = 0;
 
     if (!Object.keys(cart).length) {
         el.innerHTML = '<p class="text-muted text-center">Keranjang kosong</p>';
         document.getElementById('cart-total').innerText = 'Rp 0';
-        hitungKembalian();
+        document.getElementById('cart-subtotal').innerText = 'Rp 0';
+        document.getElementById('cart-pajak').innerText = 'Rp 0';
         return;
     }
 
     Object.values(cart).forEach(i => {
+
         const sub = i.qty * i.price;
-        total += sub;
+        const setelahDiskon = sub - (i.diskon || 0);
+        subtotal += setelahDiskon;
 
         el.innerHTML += `
         <div class="border rounded p-2 mb-2">
             <b>${i.name}</b><br>
             <small>Rp ${i.price.toLocaleString()}</small>
-            <div class="d-flex justify-content-between mt-1 align-items-center">
+
+            <div class="mt-1">
+                <small>Diskon Produk</small>
+                <input type="number"
+                       class="form-control form-control-sm"
+                       value="${i.diskon}"
+                       onchange="setDiskon(${i.id}, this.value)">
+            </div>
+
+            <div class="d-flex justify-content-between mt-2 align-items-center">
                 <div>
                     <button onclick="kurang(${i.id})" class="btn btn-sm btn-light">−</button>
                     <span class="mx-2">${i.qty}</span>
                     <button onclick="tambah(${i.id})" class="btn btn-sm btn-light">+</button>
                 </div>
-                <b>Rp ${sub.toLocaleString()}</b>
+                <b>Rp ${setelahDiskon.toLocaleString()}</b>
             </div>
         </div>`;
     });
+
+    const diskonTotal = Number(document.getElementById('diskon-total').value || 0);
+    const pajak = (subtotal - diskonTotal) * pajakPersen / 100;
+    total = subtotal - diskonTotal + pajak;
+
+    document.getElementById('cart-subtotal').innerText =
+        'Rp ' + subtotal.toLocaleString();
+
+    document.getElementById('cart-pajak').innerText =
+        'Rp ' + pajak.toLocaleString();
 
     document.getElementById('cart-total').innerText =
         'Rp ' + total.toLocaleString();
 
     hitungKembalian();
+}
+
+/* DISKON PER PRODUK */
+function setDiskon(id, val){
+    cart[id].diskon = Number(val || 0);
+    renderCart();
 }
 
 function tambah(id){
@@ -189,7 +229,7 @@ function kurang(id){
     renderCart();
 }
 
-/* ================= PAYMENT ================= */
+/* PAYMENT */
 function pilihCash(){
     paymentType = 'cash';
     document.getElementById('uang-bayar').disabled = false;
@@ -203,7 +243,7 @@ function pilihQris(){
     document.getElementById('uang-kembali').value = 'Rp 0';
 }
 
-/* ================= KEMBALIAN ================= */
+/* KEMBALIAN */
 function hitungKembalian(){
     const bayar = Number(document.getElementById('uang-bayar').value || 0);
     const kembali = bayar - total;
@@ -213,9 +253,9 @@ function hitungKembalian(){
 }
 
 document.getElementById('uang-bayar')
-    .addEventListener('input', hitungKembalian);
+.addEventListener('input', hitungKembalian);
 
-/* ================= SUBMIT ================= */
+/* SUBMIT */
 function submitTransaksi(){
     if (total <= 0) return alert('Keranjang kosong');
 
@@ -243,9 +283,9 @@ function submitTransaksi(){
     }
 }
 
-/* ================= SIMPAN ================= */
+/* SIMPAN */
 function simpanTransaksi(){
-    fetch("{{ route('pengeluaran-barang.store') }}", {
+    fetch("{{ route('kasir.simpan') }}", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -255,11 +295,14 @@ function simpanTransaksi(){
             bayar: paymentType === 'cash'
                 ? document.getElementById('uang-bayar').value
                 : total,
-            payment_type: paymentType,
+            metode_pembayaran: paymentType,
+            diskon_transaksi: document.getElementById('diskon-total').value,
+            pajak: (subtotal - document.getElementById('diskon-total').value) * 11 / 100,
             produk: Object.values(cart).map(i => ({
                 produk_id: i.id,
                 qty: i.qty,
-                sub_total: i.qty * i.price
+                sub_total: i.qty * i.price,
+                diskon_item: i.diskon || 0
             }))
         })
     })

@@ -15,7 +15,9 @@ class PenerimaanBarangController extends Controller
 {
     public function index()
     {
-        return view('penerimaan-barang.index');
+         $nomorFaktur = PenerimaanBarang::nomorPenerimaan();
+
+        return view('penerimaan-barang.index', compact('nomorFaktur'));
     }
 
     public function store(Request $request)

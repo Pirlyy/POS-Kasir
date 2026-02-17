@@ -23,9 +23,10 @@ Route::post('/login', [LoginController::class, 'handleLogin'])
     ->name('login')
     ->middleware('guest');
 
+
 /*
 |--------------------------------------------------------------------------
-| AUTHENTICATED
+| AUTHENTICATED AREA
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
@@ -37,7 +38,7 @@ Route::middleware('auth')->group(function () {
     | ADMIN AREA
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['admin'])->group(function () {
+    Route::middleware('admin')->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
@@ -51,26 +52,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/reset-password', 'resetpassword')->name('reset-password');
         });
 
-    /*
-    |--------------------------------------------------------------------------
-    | KASIR (POS MODE) - ONLY ROLE KASIR
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware(['kasir'])->group(function () {
-
-        // halaman kasir
-        Route::get('/kasir', [KasirController::class, 'index'])
-            ->name('kasir.index');
-
-        // ✅ MIDTRANS SNAP TOKEN (QRIS SANDBOX)
-        Route::post('/kasir/midtrans-token', [KasirController::class, 'midtransToken'])
-            ->name('kasir.midtrans.token');
-    });
-
-    // =====================
-    // MASTER DATA
-    // =====================
-    Route::prefix('master-data')->as('master-data.')->group(function () {
+        /*
+        |--------------------------------------------------------------------------
+        | MASTER DATA
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('master-data')->as('master-data.')->group(function () {
 
             Route::prefix('kategori')->as('kategori.')
                 ->controller(KategoriController::class)->group(function () {
@@ -87,7 +74,11 @@ Route::middleware('auth')->group(function () {
                 });
         });
 
-        // TRANSAKSI ADMIN
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSAKSI ADMIN
+        |--------------------------------------------------------------------------
+        */
         Route::prefix('penerimaan-barang')
             ->as('penerimaan-barang.')
             ->controller(PenerimaanBarangController::class)
@@ -126,52 +117,46 @@ Route::middleware('auth')->group(function () {
                 ->controller(PengeluaranBarangController::class)
                 ->group(function () {
                     Route::get('/laporan', 'laporan')->name('laporan');
-                    Route::get(
-                        '/laporan/{nomor_pengeluaran}/detail',
-                        'detailLaporan'
-                    )->name('detail-laporan');
+                    Route::get('/laporan/{nomor_pengeluaran}/detail', 'detailLaporan')
+                        ->name('detail-laporan');
                 });
         });
     });
 
+
     /*
     |--------------------------------------------------------------------------
-    | KASIR AREA
+    | KASIR AREA (POS SYSTEM)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['kasir'])->group(function () {
+    Route::middleware('kasir')->group(function () {
 
+        // halaman POS
         Route::get('/kasir', [KasirController::class, 'index'])
             ->name('kasir.index');
 
+        // ⭐ SIMPAN TRANSAKSI POS (WAJIB UNTUK STRUK)
+        Route::post('/kasir/simpan', [KasirController::class, 'simpanTransaksi'])
+            ->name('kasir.simpan');
+
+        // MIDTRANS QRIS
         Route::post('/kasir/midtrans-token', [KasirController::class, 'midtransToken'])
             ->name('kasir.midtrans.token');
 
+        // PRINT STRUK
+        Route::get('/kasir/pengeluaran/{id}/print',
+            [PengeluaranBarangController::class, 'print']
+        )->name('kasir.pengeluaran.print');
+
+        // barang datang mode kasir
         Route::get('/barang-datang', function () {
             return view('penerimaan-barang.standalone');
         })->name('barang-datang');
 
         Route::post('/barang-datang', [PenerimaanBarangController::class, 'store'])
             ->name('barang-datang.store');
-
-        Route::post('/pengeluaran-barang', [PengeluaranBarangController::class, 'store'])
-            ->name('pengeluaran-barang.store');
-
-        Route::get(
-            '/kasir/pengeluaran/{id}/print',
-            [PengeluaranBarangController::class, 'print']
-        )->name('kasir.pengeluaran.print');
-
-        /*
-        |--------------------------------------------------------------------------
-        | 🔥 TAMBAHAN WAJIB (FIX STRUK about:blank)
-        |--------------------------------------------------------------------------
-        */
-        Route::get('/kasir/simpan-session/{id}', function ($id) {
-            session(['last_pengeluaran_id' => $id]);
-            return response()->json(['ok' => true]);
-        });
     });
+
 
     /*
     |--------------------------------------------------------------------------
@@ -183,4 +168,5 @@ Route::middleware('auth')->group(function () {
         Route::get('/cek-stok-produk', [ProductController::class, 'cekStok'])->name('cek-stok');
         Route::get('/cek-harga-pack', [ProductController::class, 'cekHarga'])->name('cek-harga');
     });
+
 });

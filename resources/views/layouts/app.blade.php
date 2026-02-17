@@ -137,10 +137,10 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <script>
   $(function () {
     $("#table1").DataTable({
-      "responsive": true, "lengthChange": false, "autoWidth": false,
-      "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+      "responsive": true, "lengthChange": true,"lengthMenu": [5, 10, 25, 50], "autoWidth": false, "pageLength": 5,
+      "buttons": false,
     }).buttons().container().appendTo('#table1_wrapper .col-md-6:eq(0)');
-    $if
+    $
     $('#table2').DataTable({
       "paging": true,
       "lengthChange": true,

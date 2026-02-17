@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\PengeluaranBarang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 // MIDTRANS
 use Midtrans\Config;
@@ -12,7 +14,7 @@ use Midtrans\Snap;
 class KasirController extends Controller
 {
     /**
-     * Halaman Kasir (POS)
+     * HALAMAN POS KASIR
      */
     public function index()
     {
@@ -23,41 +25,104 @@ class KasirController extends Controller
         return view('kasir.index', compact('products'));
     }
 
-    
+    /**
+     * SIMPAN TRANSAKSI POS (INI YANG PALING PENTING)
+     */
+    public function simpanTransaksi(Request $request)
+    {
+        $request->validate([
+            'produk' => 'required|array|min:1',
+            'bayar'  => 'required|numeric|min:1',
+        ]);
+
+        $produk = collect($request->produk);
+
+        $total = $produk->sum('sub_total');
+        $bayar = (int) $request->bayar;
+        $kembalian = $bayar - $total;
+
+        if ($bayar < $total) {
+            return response()->json([
+                'message' => 'Bayar kurang'
+            ], 422);
+        }
+
+        /*
+        ================================
+        SIMPAN HEADER TRANSAKSI
+        ================================
+        */
+        $pengeluaran = PengeluaranBarang::create([
+            'nomor_pengeluaran' => PengeluaranBarang::nomerpengeluaran(),
+            'nama_petugas'      => Auth::user()->name ?? 'Kasir',
+            'bayar'             => $bayar,
+            'kembalian'         => $kembalian,
+            'total_harga'       => $total,
+        ]);
+
+        /*
+        ================================
+        SIMPAN DETAIL + UPDATE STOK
+        ================================
+        */
+        foreach ($produk as $item) {
+
+            $product = Product::findOrFail($item['produk_id']);
+
+            $pengeluaran->items()->create([
+                'product_id' => $product->id,
+                'jumlah'     => $item['qty'],
+                'harga_jual' => $product->harga_jual,
+                'sub_total'  => $item['sub_total'],
+            ]);
+
+            // kurangi stok
+            $product->decrement('stok', $item['qty']);
+        }
+
+        return response()->json([
+            'id' => $pengeluaran->id
+        ]);
+    }
 
     /**
-     * Generate Snap Token Midtrans (QRIS / E-Wallet)
+     * HALAMAN STRUK (PRINT)
+     */
+    public function struk($id)
+    {
+        $pengeluaran = PengeluaranBarang::with('items.product')
+            ->findOrFail($id);
+
+        return view('pengeluaran-barang.print', compact('pengeluaran'));
+    }
+
+    /**
+     * MIDTRANS QRIS TOKEN
      */
     public function midtransToken(Request $request)
     {
-        // VALIDASI
         $request->validate([
             'total' => 'required|numeric|min:1',
         ]);
 
-        // CONFIG MIDTRANS (SANDBOX)
         Config::$serverKey    = config('services.midtrans.server_key');
         Config::$isProduction = config('services.midtrans.is_production');
         Config::$isSanitized  = true;
         Config::$is3ds        = true;
 
-        // PARAM TRANSAKSI
         $params = [
             'transaction_details' => [
-                'order_id'      => 'POS-' . now()->format('YmdHis') . '-' . rand(100,999),
+                'order_id' => 'POS-' . now()->format('YmdHis') . rand(100,999),
                 'gross_amount' => (int) $request->total,
             ],
             'customer_details' => [
                 'first_name' => auth()->user()->name ?? 'Customer',
             ],
-            'enabled_payments' => ['qris'], // 🔥 QRIS ONLY
+            'enabled_payments' => ['qris'],
         ];
 
-        // GENERATE TOKEN
-        $snapToken = Snap::getSnapToken($params);
-
         return response()->json([
-            'token' => $snapToken
+            'token' => Snap::getSnapToken($params)
         ]);
     }
 }

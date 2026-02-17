@@ -1,5 +1,10 @@
 @extends('layouts.app-plain')
 
+@php
+// fallback jika controller tidak kirim data
+$nomorFaktur = $nomorFaktur ?? \App\Models\PenerimaanBarang::nomorPenerimaan();
+@endphp
+
 @section('content')
 <div class="row">
     {{-- KIRI : FORM --}}
@@ -10,16 +15,16 @@
                 @csrf
 
                 <div id="data-hidden"></div>
-<div class="card-header bg-white d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">📦 Barang Datang</h5>
 
-    <button type="submit"
-        class="btn btn-primary"
-        onclick="return items.length > 0 || (alert('Belum ada produk'), false)">
-        💾 Simpan
-    </button>
-</div>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📦 Barang Datang</h5>
 
+                    <button type="submit"
+                        class="btn btn-primary"
+                        onclick="return items.length > 0 || (alert('Belum ada produk'), false)">
+                        💾 Simpan
+                    </button>
+                </div>
 
                 <div class="card-body">
 
@@ -29,9 +34,16 @@
                             <label class="small text-muted">Distributor</label>
                             <input type="text" name="distributor" class="form-control" placeholder="Nama distributor">
                         </div>
+
                         <div class="col-md-6">
                             <label class="small text-muted">Nomor Faktur</label>
-                            <input type="text" name="nomor_faktur" class="form-control" placeholder="INV-001">
+
+                            {{-- AUTO NOMOR FAKTUR --}}
+                            <input type="text"
+                                   name="nomor_faktur"
+                                   class="form-control"
+                                   value="{{ $nomorFaktur }}"
+                                   readonly>
                         </div>
                     </div>
 
@@ -126,9 +138,9 @@
 
 @push('css')
 <style>
-    .card {
-        border-radius: 8px;
-    }
+.card {
+    border-radius: 8px;
+}
 </style>
 @endpush
 
@@ -228,14 +240,13 @@ function renderTable(){
     // hidden input
     $('#data-hidden').html('');
     items.forEach((i, x) => {
-       $('#data-hidden').append(`
-    <input type="hidden" name="produk[${x}][produk_id]" value="${i.id}">
-    <input type="hidden" name="produk[${x}][nama_produk]" value="${i.nama}">
-    <input type="hidden" name="produk[${x}][qty]" value="${i.qty}">
-    <input type="hidden" name="produk[${x}][harga_beli]" value="${i.harga}">
-    <input type="hidden" name="produk[${x}][sub_total]" value="${i.subtotal}">
-`);
-
+        $('#data-hidden').append(`
+            <input type="hidden" name="produk[${x}][produk_id]" value="${i.id}">
+            <input type="hidden" name="produk[${x}][nama_produk]" value="${i.nama}">
+            <input type="hidden" name="produk[${x}][qty]" value="${i.qty}">
+            <input type="hidden" name="produk[${x}][harga_beli]" value="${i.harga}">
+            <input type="hidden" name="produk[${x}][sub_total]" value="${i.subtotal}">
+        `);
     });
 }
 

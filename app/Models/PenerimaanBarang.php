@@ -10,15 +10,18 @@ class PenerimaanBarang extends Model
 
     // ✅ HARUS STATIC
     public static function nomorPenerimaan()
-    {
-        $max = self::max('id') ?? 0; // antisipasi data kosong
-        $prefix = 'PBR-';
-        $date = date('dmy');
+{
+    $today = now()->format('Ymd');
 
-        $nomor = $prefix . $date . str_pad($max + 1, 4, '0', STR_PAD_LEFT);
+    $last = self::whereDate('created_at', today())
+        ->latest()
+        ->first();
 
-        return $nomor;
-    }
+    $urutan = $last ? ((int) substr($last->nomor_penerimaan, -4)) + 1 : 1;
+
+    return 'IN-' . $today . '-' . str_pad($urutan, 4, '0', STR_PAD_LEFT);
+}
+
 
     public function items(){
         return $this->hasMany(ItemPenerimaanBarang::class, 'nomor_penerimaan', 'nomor_penerimaan');
