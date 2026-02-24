@@ -91,9 +91,21 @@
             </div>
 
             <div class="btn-group w-100 mb-2">
-                <button type="button" class="btn btn-success" onclick="pilihCash()">Cash</button>
-                <button type="button" class="btn btn-secondary" onclick="pilihQris()">QRIS</button>
-            </div>
+    <button type="button" class="btn btn-success" onclick="pilihCash()">Cash</button>
+    <button type="button" class="btn btn-secondary" onclick="pilihQris()">QRIS</button>
+    <button type="button" class="btn btn-info" onclick="toggleBank()">Bank</button>
+</div>
+
+<!-- PILIHAN BANK (HIDDEN DEFAULT) -->
+<div id="bank-options" class="mb-2" style="display:none;">
+    <select id="bank-select" class="form-control" onchange="pilihBank()">
+        <option value="">-- Pilih Bank --</option>
+        <option value="bca">Bank BCA</option>
+        <option value="mandiri">Bank Mandiri</option>
+        <option value="bri">Bank BRI</option>
+        <option value="lainnya">Bank Lainnya</option>
+    </select>
+</div>
 
             <input type="number"
                    id="uang-bayar"
@@ -124,9 +136,17 @@ let subtotal = 0;
 let total = 0;
 let pajakPersen = 11;
 let paymentType = 'cash';
+let selectedBank = null;
 let printWindow = null;
 
-/* TAMBAH PRODUK */
+/* FORMAT RUPIAH */
+function rupiah(angka){
+    return 'Rp ' + Number(angka).toLocaleString();
+}
+
+/* ===============================
+   TAMBAH PRODUK
+=================================*/
 document.querySelectorAll('.product-btn').forEach(btn => {
     btn.onclick = () => {
         const id = btn.dataset.id;
@@ -138,7 +158,7 @@ document.querySelectorAll('.product-btn').forEach(btn => {
                 price: Number(btn.dataset.price),
                 qty: 1,
                 stock: Number(btn.dataset.stock),
-                diskon: 0
+                diskon_persen: 0
             };
         } else {
             if (cart[id].qty >= cart[id].stock) {
@@ -151,7 +171,9 @@ document.querySelectorAll('.product-btn').forEach(btn => {
     };
 });
 
-/* RENDER CART */
+/* ===============================
+   RENDER CART
+=================================*/
 function renderCart(){
     const el = document.getElementById('cart-items');
     el.innerHTML = '';
@@ -159,28 +181,32 @@ function renderCart(){
 
     if (!Object.keys(cart).length) {
         el.innerHTML = '<p class="text-muted text-center">Keranjang kosong</p>';
-        document.getElementById('cart-total').innerText = 'Rp 0';
-        document.getElementById('cart-subtotal').innerText = 'Rp 0';
-        document.getElementById('cart-pajak').innerText = 'Rp 0';
+        document.getElementById('cart-total').innerText = rupiah(0);
+        document.getElementById('cart-subtotal').innerText = rupiah(0);
+        document.getElementById('cart-pajak').innerText = rupiah(0);
         return;
     }
 
     Object.values(cart).forEach(i => {
 
-        const sub = i.qty * i.price;
-        const setelahDiskon = sub - (i.diskon || 0);
-        subtotal += setelahDiskon;
+        const hargaAwal = i.qty * i.price;
+        const diskonNominal = hargaAwal * (i.diskon_persen / 100);
+        const hargaSetelahDiskon = hargaAwal - diskonNominal;
+
+        subtotal += hargaSetelahDiskon;
 
         el.innerHTML += `
         <div class="border rounded p-2 mb-2">
             <b>${i.name}</b><br>
-            <small>Rp ${i.price.toLocaleString()}</small>
+            <small>${rupiah(i.price)}</small>
 
             <div class="mt-1">
-                <small>Diskon Produk</small>
+                <small>Diskon Produk (%)</small>
                 <input type="number"
                        class="form-control form-control-sm"
-                       value="${i.diskon}"
+                       value="${i.diskon_persen}"
+                       min="0"
+                       max="100"
                        onchange="setDiskon(${i.id}, this.value)">
             </div>
 
@@ -190,30 +216,32 @@ function renderCart(){
                     <span class="mx-2">${i.qty}</span>
                     <button onclick="tambah(${i.id})" class="btn btn-sm btn-light">+</button>
                 </div>
-                <b>Rp ${setelahDiskon.toLocaleString()}</b>
+                <b>${rupiah(hargaSetelahDiskon)}</b>
             </div>
         </div>`;
     });
 
     const diskonTotal = Number(document.getElementById('diskon-total').value || 0);
-    const pajak = (subtotal - diskonTotal) * pajakPersen / 100;
-    total = subtotal - diskonTotal + pajak;
+    const subtotalSetelahDiskonTotal = subtotal - diskonTotal;
+    const pajak = subtotalSetelahDiskonTotal * pajakPersen / 100;
+    total = subtotalSetelahDiskonTotal + pajak;
 
-    document.getElementById('cart-subtotal').innerText =
-        'Rp ' + subtotal.toLocaleString();
-
-    document.getElementById('cart-pajak').innerText =
-        'Rp ' + pajak.toLocaleString();
-
-    document.getElementById('cart-total').innerText =
-        'Rp ' + total.toLocaleString();
+    document.getElementById('cart-subtotal').innerText = rupiah(subtotal);
+    document.getElementById('cart-pajak').innerText = rupiah(pajak);
+    document.getElementById('cart-total').innerText = rupiah(total);
 
     hitungKembalian();
 }
 
-/* DISKON PER PRODUK */
+/* ===============================
+   DISKON PRODUK
+=================================*/
 function setDiskon(id, val){
-    cart[id].diskon = Number(val || 0);
+    val = Number(val || 0);
+    if(val < 0) val = 0;
+    if(val > 100) val = 100;
+
+    cart[id].diskon_persen = val;
     renderCart();
 }
 
@@ -229,62 +257,98 @@ function kurang(id){
     renderCart();
 }
 
-/* PAYMENT */
+/* ===============================
+   PAYMENT METHOD
+=================================*/
+
 function pilihCash(){
     paymentType = 'cash';
+    selectedBank = null;
+
+    document.getElementById('bank-options').style.display = 'none';
+    document.getElementById('bank-select').value = '';
+
     document.getElementById('uang-bayar').disabled = false;
     hitungKembalian();
 }
 
 function pilihQris(){
     paymentType = 'qris';
+    selectedBank = null;
+
+    document.getElementById('bank-options').style.display = 'none';
+    document.getElementById('bank-select').value = '';
+
     document.getElementById('uang-bayar').value = '';
     document.getElementById('uang-bayar').disabled = true;
-    document.getElementById('uang-kembali').value = 'Rp 0';
+    document.getElementById('uang-kembali').value = rupiah(0);
 }
 
-/* KEMBALIAN */
+function toggleBank(){
+    const el = document.getElementById('bank-options');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function pilihBank(){
+    const bank = document.getElementById('bank-select').value;
+
+    if(!bank){
+        paymentType = 'cash';
+        selectedBank = null;
+        return;
+    }
+
+    paymentType = 'bank';
+    selectedBank = bank;
+
+    document.getElementById('uang-bayar').value = '';
+    document.getElementById('uang-bayar').disabled = true;
+    document.getElementById('uang-kembali').value = rupiah(0);
+}
+
+/* ===============================
+   KEMBALIAN
+=================================*/
 function hitungKembalian(){
+    if(paymentType !== 'cash') return;
+
     const bayar = Number(document.getElementById('uang-bayar').value || 0);
     const kembali = bayar - total;
 
     document.getElementById('uang-kembali').value =
-        'Rp ' + Math.max(kembali, 0).toLocaleString();
+        rupiah(Math.max(kembali, 0));
 }
 
 document.getElementById('uang-bayar')
 .addEventListener('input', hitungKembalian);
 
-/* SUBMIT */
+/* ===============================
+   SUBMIT
+=================================*/
 function submitTransaksi(){
     if (total <= 0) return alert('Keranjang kosong');
 
-    printWindow = window.open('', '_blank');
-
-    if (paymentType === 'qris') {
-        fetch("{{ route('kasir.midtrans.token') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ total })
-        })
-        .then(r => r.json())
-        .then(r => {
-            snap.pay(r.token, {
-                onSuccess: function () {
-                    simpanTransaksi();
-                }
-            });
-        });
-    } else {
-        simpanTransaksi();
+    if(paymentType === 'bank' && !selectedBank){
+        return alert("Pilih bank terlebih dahulu!");
     }
+
+    simpanTransaksi();
 }
 
-/* SIMPAN */
+/* ===============================
+   SIMPAN TRANSAKSI
+=================================*/
 function simpanTransaksi(){
+
+    let bayar = paymentType === 'cash'
+        ? Number(document.getElementById('uang-bayar').value || 0)
+        : total;
+
+    if(paymentType === 'cash' && bayar < total){
+        alert("Uang kurang!");
+        return;
+    }
+
     fetch("{{ route('kasir.simpan') }}", {
         method: 'POST',
         headers: {
@@ -292,25 +356,38 @@ function simpanTransaksi(){
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({
-            bayar: paymentType === 'cash'
-                ? document.getElementById('uang-bayar').value
-                : total,
+            subtotal: subtotal,
+            total: total,
+            bayar: bayar,
             metode_pembayaran: paymentType,
-            diskon_transaksi: document.getElementById('diskon-total').value,
-            pajak: (subtotal - document.getElementById('diskon-total').value) * 11 / 100,
+            bank: selectedBank,
+            diskon_transaksi: Number(document.getElementById('diskon-total').value || 0),
+            pajak: (subtotal - Number(document.getElementById('diskon-total').value || 0)) * pajakPersen / 100,
             produk: Object.values(cart).map(i => ({
                 produk_id: i.id,
                 qty: i.qty,
-                sub_total: i.qty * i.price,
-                diskon_item: i.diskon || 0
+                harga: i.price,
+                diskon_persen: i.diskon_persen
             }))
         })
     })
-    .then(r => r.json())
+    .then(async res => {
+        if(!res.ok){
+            let err = await res.json();
+            throw new Error(err.message || "Server error");
+        }
+        return res.json();
+    })
     .then(r => {
-        printWindow.location.href =
-            "{{ url('/kasir/pengeluaran') }}/" + r.id + "/print";
+        window.open(
+            "{{ url('/kasir/pengeluaran') }}/" + r.id + "/print",
+            '_blank'
+        );
         location.reload();
+    })
+    .catch(err => {
+        alert("Gagal simpan transaksi:\n" + err.message);
+        console.error(err);
     });
 }
 </script>

@@ -7,38 +7,26 @@ use Illuminate\Database\Eloquent\Model;
 class PengeluaranBarang extends Model
 {
     protected $fillable = [
-    'nomor_pengeluaran',
-    'nama_petugas',
-    'subtotal',
-    'diskon_item',
-    'diskon_transaksi',
-    'pajak',
-    'total_harga',
-    'bayar',
-    'kembalian',
-    'metode_pembayaran'
-];
+        'nomor_pengeluaran',
+        'nama_petugas',
+        'subtotal',
+        'diskon_item',
+        'diskon_transaksi',
+        'pajak',
+        'total_harga',
+        'bayar',
+        'kembalian',
+        'metode_pembayaran'
+    ];
 
+    // ❌ HAPUS protected $guarded = [];
 
-    protected $guarded = [];
-
-    /*
-    ===============================
-    AUTO NOMOR TRANSAKSI
-    ===============================
-    */
     public static function nomerpengeluaran()
     {
         $maxid = self::max('id') ?? 0;
-
         return 'TRX-' . date('dmy') . str_pad($maxid + 1, 5, '0', STR_PAD_LEFT);
     }
 
-    /*
-    ===============================
-    RELASI KE ITEM
-    ===============================
-    */
     public function items()
     {
         return $this->hasMany(
@@ -47,6 +35,7 @@ class PengeluaranBarang extends Model
             'id'
         );
     }
+
 
     /*
     ===============================

@@ -29,61 +29,75 @@ class KasirController extends Controller
      * SIMPAN TRANSAKSI POS (INI YANG PALING PENTING)
      */
     public function simpanTransaksi(Request $request)
-    {
+{
+    try {
+
         $request->validate([
             'produk' => 'required|array|min:1',
-            'bayar'  => 'required|numeric|min:1',
+            'total'  => 'required|numeric|min:1',
+            'bayar'  => 'required|numeric|min:0',
         ]);
 
-        $produk = collect($request->produk);
-
-        $total = $produk->sum('sub_total');
+        $produk  = collect($request->produk);
+        $subtotal = (int) $request->subtotal;
+        $diskonTransaksi = (int) $request->diskon_transaksi;
+        $pajak = (int) $request->pajak;
+        $total = (int) $request->total;
         $bayar = (int) $request->bayar;
         $kembalian = $bayar - $total;
 
-        if ($bayar < $total) {
+        if ($bayar < $total && $request->metode_pembayaran === 'cash') {
             return response()->json([
                 'message' => 'Bayar kurang'
             ], 422);
         }
 
-        /*
-        ================================
-        SIMPAN HEADER TRANSAKSI
-        ================================
-        */
         $pengeluaran = PengeluaranBarang::create([
             'nomor_pengeluaran' => PengeluaranBarang::nomerpengeluaran(),
-            'nama_petugas'      => Auth::user()->name ?? 'Kasir',
-            'bayar'             => $bayar,
-            'kembalian'         => $kembalian,
-            'total_harga'       => $total,
+            'nama_petugas' => Auth::user()->name ?? 'Kasir',
+            'subtotal' => $subtotal,
+            'diskon_transaksi' => $diskonTransaksi,
+            'pajak' => $pajak,
+            'total_harga' => $total,
+            'bayar' => $bayar,
+            'kembalian' => $kembalian,
+            'metode_pembayaran' => $request->metode_pembayaran,
         ]);
 
-        /*
-        ================================
-        SIMPAN DETAIL + UPDATE STOK
-        ================================
-        */
         foreach ($produk as $item) {
 
             $product = Product::findOrFail($item['produk_id']);
 
+            $qty = (int) $item['qty'];
+            $harga = (int) $item['harga'];
+            $diskonPersen = (int) $item['diskon_persen'];
+
+            $hargaAwal = $qty * $harga;
+            $diskonNominal = $hargaAwal * $diskonPersen / 100;
+            $subTotalFix = $hargaAwal - $diskonNominal;
+
             $pengeluaran->items()->create([
                 'product_id' => $product->id,
-                'jumlah'     => $item['qty'],
-                'harga_jual' => $product->harga_jual,
-                'sub_total'  => $item['sub_total'],
+                'jumlah' => $qty,
+                'harga_jual' => $harga,
+                'diskon_persen' => $diskonPersen,
+                'sub_total' => $subTotalFix,
             ]);
 
-            // kurangi stok
-            $product->decrement('stok', $item['qty']);
+            $product->decrement('stok', $qty);
         }
 
         return response()->json([
             'id' => $pengeluaran->id
         ]);
+
+    } catch (\Throwable $e) {
+
+        return response()->json([
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * HALAMAN STRUK (PRINT)
