@@ -26,78 +26,79 @@ class KasirController extends Controller
     }
 
     /**
-     * SIMPAN TRANSAKSI POS (INI YANG PALING PENTING)
+     * SIMPAN TRANSAKSI POS
      */
     public function simpanTransaksi(Request $request)
-{
-    try {
+    {
+        try {
 
-        $request->validate([
-            'produk' => 'required|array|min:1',
-            'total'  => 'required|numeric|min:1',
-            'bayar'  => 'required|numeric|min:0',
-        ]);
-
-        $produk  = collect($request->produk);
-        $subtotal = (int) $request->subtotal;
-        $diskonTransaksi = (int) $request->diskon_transaksi;
-        $pajak = (int) $request->pajak;
-        $total = (int) $request->total;
-        $bayar = (int) $request->bayar;
-        $kembalian = $bayar - $total;
-
-        if ($bayar < $total && $request->metode_pembayaran === 'cash') {
-            return response()->json([
-                'message' => 'Bayar kurang'
-            ], 422);
-        }
-
-        $pengeluaran = PengeluaranBarang::create([
-            'nomor_pengeluaran' => PengeluaranBarang::nomerpengeluaran(),
-            'nama_petugas' => Auth::user()->name ?? 'Kasir',
-            'subtotal' => $subtotal,
-            'diskon_transaksi' => $diskonTransaksi,
-            'pajak' => $pajak,
-            'total_harga' => $total,
-            'bayar' => $bayar,
-            'kembalian' => $kembalian,
-            'metode_pembayaran' => $request->metode_pembayaran,
-        ]);
-
-        foreach ($produk as $item) {
-
-            $product = Product::findOrFail($item['produk_id']);
-
-            $qty = (int) $item['qty'];
-            $harga = (int) $item['harga'];
-            $diskonPersen = (int) $item['diskon_persen'];
-
-            $hargaAwal = $qty * $harga;
-            $diskonNominal = $hargaAwal * $diskonPersen / 100;
-            $subTotalFix = $hargaAwal - $diskonNominal;
-
-            $pengeluaran->items()->create([
-                'product_id' => $product->id,
-                'jumlah' => $qty,
-                'harga_jual' => $harga,
-                'diskon_persen' => $diskonPersen,
-                'sub_total' => $subTotalFix,
+            $request->validate([
+                'produk' => 'required|array|min:1',
+                'total'  => 'required|numeric|min:1',
+                'bayar'  => 'required|numeric|min:0',
             ]);
 
-            $product->decrement('stok', $qty);
+            $produk  = collect($request->produk);
+
+            $subtotal = (float) $request->subtotal;
+            $diskonTransaksi = (float) $request->diskon_transaksi;
+            $pajak = (float) $request->pajak;
+            $total = (float) $request->total;
+            $bayar = (float) $request->bayar;
+            $kembalian = $bayar - $total;
+
+            if ($bayar < $total && $request->metode_pembayaran === 'cash') {
+                return response()->json([
+                    'message' => 'Bayar kurang'
+                ], 422);
+            }
+
+            $pengeluaran = PengeluaranBarang::create([
+                'nomor_pengeluaran' => PengeluaranBarang::nomerpengeluaran(),
+                'nama_petugas' => Auth::user()->name ?? 'Kasir',
+                'subtotal' => $subtotal,
+                'diskon_transaksi' => $diskonTransaksi,
+                'pajak' => $pajak,
+                'total_harga' => $total,
+                'bayar' => $bayar,
+                'kembalian' => $kembalian,
+                'metode_pembayaran' => $request->metode_pembayaran,
+            ]);
+
+            foreach ($produk as $item) {
+
+                $product = Product::findOrFail($item['produk_id']);
+
+                $qty = (int) $item['qty'];
+                $harga = (float) $item['harga'];
+                $diskonPersen = (int) $item['diskon_persen'];
+
+                $hargaAwal = $qty * $harga;
+                $diskonNominal = ($hargaAwal * $diskonPersen) / 100;
+                $subTotalFix = $hargaAwal - $diskonNominal;
+
+                $pengeluaran->items()->create([
+                    'product_id' => $product->id,
+                    'jumlah' => $qty,
+                    'harga_jual' => $harga,
+                    'diskon_item' => $diskonNominal, // ✅ SESUAI DATABASE
+                    'sub_total' => $subTotalFix,
+                ]);
+
+                $product->decrement('stok', $qty);
+            }
+
+            return response()->json([
+                'id' => $pengeluaran->id
+            ]);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'id' => $pengeluaran->id
-        ]);
-
-    } catch (\Throwable $e) {
-
-        return response()->json([
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
 
     /**
      * HALAMAN STRUK (PRINT)

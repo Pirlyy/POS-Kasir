@@ -372,12 +372,14 @@ function simpanTransaksi(){
         })
     })
     .then(async res => {
-        if(!res.ok){
-            let err = await res.json();
-            throw new Error(err.message || "Server error");
-        }
-        return res.json();
-    })
+    let data = await res.json();
+
+    if(!res.ok){
+        throw new Error(data.error || data.message || "Server error");
+    }
+
+    return data;
+})
     .then(r => {
         window.open(
             "{{ url('/kasir/pengeluaran') }}/" + r.id + "/print",
